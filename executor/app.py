@@ -270,7 +270,7 @@ if __name__ == '__main__':
                                          aggregator,
                                          rank=0,
                                          size=size,
-                                         backend="GRPC",
+                                         backend="MQTT",
                                          is_preprocessed=args.is_preprocessed)
     server_manager.run()
 
