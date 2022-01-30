@@ -12,10 +12,10 @@ wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
 
 #unzip MNIST.zip
 
-tar -xf *.tar.gz
+gunzip *.tar.gz
 
-sudo mv mnist/train train-images-idx3-ubyte
-sudo mv mnist/train train-labels-idx1-ubyte
+mv mnist/train train-images-idx3-ubyte
+mv mnist/train train-labels-idx1-ubyte
 mv mnist/test t10k-images-idx3-ubyte
 mv mnist/test t10k-images-idx3-ubyte
 
