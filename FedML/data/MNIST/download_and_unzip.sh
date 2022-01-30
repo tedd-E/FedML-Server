@@ -12,6 +12,8 @@ wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
 
 unzip MNIST.zip
 
+gunzip *.gz
+
 mv mnist/train train
 mv mnist/test test
 rm -rf mnist
