@@ -17,15 +17,15 @@ gunzip *.gz
 mkdir train
 mkdir test
 
-#tar -xf train-images-idx3-ubyte.tar.gz
-#tar -xf train-labels-idx1-ubyte.tar.gz
-#tar -xf t10k-images-idx3-ubyte.tar.gz
-#tar -xf t10k-labels-idx1-ubyte.tar.gz
+mv train-images-idx3-ubyte train-images-idx3-ubyte.json
+mv train-labels-idx1-ubyte train-labels-idx1-ubyte.json
+mv t10k-images-idx3-ubyte t10k-images-idx3-ubyte.json
+mv t10k-labels-idx1-ubyte t10k-labels-idx1-ubyte.json
 
-mv train-images-idx3-ubyte train
-mv train-labels-idx1-ubyte train
-mv t10k-images-idx3-ubyte test
-mv t10k-labels-idx1-ubyte tests
+mv train-images-idx3-ubyte.json train
+mv train-labels-idx1-ubyte.json train
+mv t10k-images-idx3-ubyte.json test
+mv t10k-labels-idx1-ubyte.json tests
 
 rm -rf mnist
 rm -rf MNIST.zip
