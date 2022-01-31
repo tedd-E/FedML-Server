@@ -5,27 +5,9 @@ wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download
 --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1cU_LcBAUZvfZWveOMhG4G5Fg9uFXhVdf' -O- \
 | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1cU_LcBAUZvfZWveOMhG4G5Fg9uFXhVdf" -O MNIST.zip && rm -rf /tmp/cookies.txt
 
-#wget http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
-#wget http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
-#wget http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
-#wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
+unzip MNIST.zip
 
-#unzip MNIST.zip
-
-gunzip *.gz
-
-mkdir train
-mkdir test
-
-mv train-images-idx3-ubyte train-images-idx3-ubyte.json
-mv train-labels-idx1-ubyte train-labels-idx1-ubyte.json
-mv t10k-images-idx3-ubyte t10k-images-idx3-ubyte.json
-mv t10k-labels-idx1-ubyte t10k-labels-idx1-ubyte.json
-
-mv train-images-idx3-ubyte.json train
-mv train-labels-idx1-ubyte.json train
-mv t10k-images-idx3-ubyte.json test
-mv t10k-labels-idx1-ubyte.json tests
-
+mv mnist/train train
+mv mnist/test test
 rm -rf mnist
 rm -rf MNIST.zip
