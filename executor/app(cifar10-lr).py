@@ -14,16 +14,9 @@ from FedML.fedml_api.distributed.fedavg.FedAVGAggregator import FedAVGAggregator
 from FedML.fedml_api.distributed.fedavg.FedAvgServerManager import FedAVGServerManager
 from FedML.fedml_api.distributed.fedavg.MyModelTrainer import MyModelTrainer
 
-from FedML.fedml_api.data_preprocessing.MNIST.data_loader import load_partition_data_mnist
 from FedML.fedml_api.data_preprocessing.cifar10.data_loader import load_partition_data_cifar10
-from FedML.fedml_api.data_preprocessing.cifar100.data_loader import load_partition_data_cifar100
-from FedML.fedml_api.data_preprocessing.cinic10.data_loader import load_partition_data_cinic10
-from FedML.fedml_api.data_preprocessing.shakespeare.data_loader import load_partition_data_shakespeare
 
-from FedML.fedml_api.model.cv.mobilenet import mobilenet
-from FedML.fedml_api.model.cv.resnet import resnet56
 from FedML.fedml_api.model.linear.lr import LogisticRegression
-from FedML.fedml_api.model.nlp.rnn import RNN_OriginalFedAvg
 
 from FedML.fedml_core.distributed.communication.observer import Observer
 
@@ -39,10 +32,10 @@ def add_args(parser):
     parser.add_argument('--model', type=str, default='lr', metavar='N',
                         help='neural network used in training')
 
-    parser.add_argument('--dataset', type=str, default='mnist', metavar='N',
+    parser.add_argument('--dataset', type=str, default='cifar10', metavar='N',
                         help='dataset used for training')
 
-    parser.add_argument('--data_dir', type=str, default='"./../../../data/mnist"',
+    parser.add_argument('--data_dir', type=str, default='"./../../../data/cifar10"',
                         help='data directory')
 
     parser.add_argument('--partition_method', type=str, default='hetero', metavar='N',
@@ -51,7 +44,7 @@ def add_args(parser):
     parser.add_argument('--partition_alpha', type=float, default=0.5, metavar='PA',
                         help='partition alpha (default: 0.5)')
 
-    parser.add_argument('--client_num_in_total', type=int, default=1000, metavar='NN',
+    parser.add_argument('--client_num_in_total', type=int, default=8, metavar='NN',
                         help='number of workers in a distributed cluster')
 
     parser.add_argument('--client_num_per_round', type=int, default=2, metavar='NN',
@@ -144,6 +137,9 @@ def register_device():
                           "partition_method": args.partition_method,
                           "partition_alpha": args.partition_alpha,
                           "model": args.model,
+                          
+                          "client_num_in_total": args.client_num_in_total,
+                          
                           "client_num_per_round": args.client_num_per_round,
                           "comm_round": args.comm_round,
                           "epochs": args.epochs,
@@ -195,10 +191,12 @@ def load_data(args, dataset_name):
         else:
             data_loader = load_partition_data_cifar10
 
+        print("============================Starting loading cifar10==========================#")
         train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
         class_num = data_loader(args.dataset, args.data_dir, args.partition_method,
                                 args.partition_alpha, args.client_num_in_total, args.batch_size)
+        print("=================================cifar10 loaded===============================#")
 
     dataset = [train_data_num, test_data_num, train_data_global, test_data_global,
                train_data_local_num_dict, train_data_local_dict, test_data_local_dict, class_num]
@@ -208,8 +206,8 @@ def load_data(args, dataset_name):
 def create_model(args, model_name, output_dim):
     logging.info("create_model. model_name = %s, output_dim = %s" % (model_name, output_dim))
     model = None
-    if model_name == "lr" and args.dataset == "mnist":
-        model = LogisticRegression(28 * 28, output_dim)
+    if model_name == "lr" and args.dataset == "cifar10":
+        model = LogisticRegression(32 * 32 * 3, output_dim)    #Dim?
         args.client_optimizer = "sgd"
     elif model_name == "rnn" and args.dataset == "shakespeare":
         model = RNN_OriginalFedAvg(28 * 28, output_dim)
@@ -233,6 +231,7 @@ if __name__ == '__main__':
 
     logging.info(args)
 
+    
     wandb.init(
         # project="federated_nas",
         project="fedml",
@@ -241,6 +240,7 @@ if __name__ == '__main__':
             args.lr),
         config=args
     )
+    
 
     # Set the random seed. The np.random seed determines the dataset partition.
     # The torch_manual_seed determines the initial weight.
@@ -255,11 +255,19 @@ if __name__ == '__main__':
     dataset = load_data(args, args.dataset)
     [train_data_num, test_data_num, train_data_global, test_data_global,
      train_data_local_num_dict, train_data_local_dict, test_data_local_dict, class_num] = dataset
+    
 
     # create model.
     # Note if the model is DNN (e.g., ResNet), the training will be very slow.
     # In this case, please use our FedML distributed version (./fedml_experiments/distributed_fedavg)
     model = create_model(args, model_name=args.model, output_dim=dataset[7])
+    
+    print("++++++++++++++++++++++++")
+    print(type(model))
+    print(model)
+    print("++++++++++++++++++++++++")
+    
+    
     model_trainer = MyModelTrainer(model)
 
     aggregator = FedAVGAggregator(train_data_global, test_data_global, train_data_num,
@@ -275,4 +283,5 @@ if __name__ == '__main__':
     server_manager.run()
 
     # if run in debug mode, process will be single threaded by default
+    #app.run(host="127.0.0.1", port=5000)
     app.run(host="0.0.0.0", port=5000)
