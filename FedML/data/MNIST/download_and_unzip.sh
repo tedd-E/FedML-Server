@@ -22,10 +22,10 @@ mkdir test
 #tar -xf t10k-images-idx3-ubyte.tar.gz
 #tar -xf t10k-labels-idx1-ubyte.tar.gz
 
-mv mnist/train train-images-idx3-ubyte
-mv mnist/train train-labels-idx1-ubyte
-mv mnist/test t10k-images-idx3-ubyte
-mv mnist/test t10k-images-idx3-ubyte
+mv train-images-idx3-ubyte train
+mv train-labels-idx1-ubyte train
+mv t10k-images-idx3-ubyte test
+mv t10k-images-idx3-ubyte test
 
 rm -rf mnist
 rm -rf MNIST.zip
