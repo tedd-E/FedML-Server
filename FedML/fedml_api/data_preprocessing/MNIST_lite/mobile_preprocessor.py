@@ -6,8 +6,8 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "../../../")))
-# TODO
+sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "../../../../")))
+# TODO: configure (see data_loader.py)
 
 def add_args(parser):
     parser.add_argument('--client_num_per_round', type=int, default=3, metavar='NN',
