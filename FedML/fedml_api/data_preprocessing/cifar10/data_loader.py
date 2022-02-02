@@ -110,6 +110,7 @@ def load_cifar10_data(datadir):
     return (X_train, y_train, X_test, y_test)
 
 
+# TODO: here
 def partition_data(dataset, datadir, partition, n_nets, alpha):
     logging.info("*********partition data***************")
     X_train, y_train, X_test, y_test = load_cifar10_data(datadir)

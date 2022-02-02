@@ -13,16 +13,16 @@ def read_data(train_data_dir, test_data_dir):
     train_data = {}
     test_data = {}
 
-    # train_files = os.listdir(train_data_dir)
-    # train_files = [f for f in train_files if f.endswith('.json')]
-    # for f in train_files:
-    #     file_path = os.path.join(train_data_dir, f)
-    #     with open(file_path, 'r') as inf:
-    #         cdata = json.load(inf)
-    #     clients.extend(cdata['users'])
-    #     if 'hierarchies' in cdata:
-    #         groups.extend(cdata['hierarchies'])
-    #     train_data.update(cdata['user_data'])
+    train_files = os.listdir()
+    train_files = [f for f in train_files if f.endswith('.gz')]
+    for f in train_files:
+        file_path = os.path.join(train_data_dir, f)
+        with open(file_path, 'r') as inf:
+            cdata = json.load(inf)
+        clients.extend(cdata['users'])
+        if 'hierarchies' in cdata:
+            groups.extend(cdata['hierarchies'])
+        train_data.update(cdata['user_data'])
 
     test_files = os.listdir()
     test_files = [f for f in test_files if f.endswith('.gz')]
