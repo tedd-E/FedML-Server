@@ -1,13 +1,11 @@
-import torch
-import load_data
-import logging
-import torch
+# import logging
+# import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from torchvision import datasets, transforms
-import numpy as np
-import time
+# import torch.optim as optim
+# from torchvision import datasets, transforms
+# import numpy as np
+# import time
 
 class Net(nn.Module):
     def __init__(self,output_dim):
