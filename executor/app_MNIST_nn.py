@@ -39,7 +39,7 @@ def add_args(parser):
     return a parser added with args required by fit
     """
     # Training settings
-    parser.add_argument('--momentum', type=float, default='0.9', metavar='N',
+    parser.add_argument('--momentum', type=float, default='0.5', metavar='N',
                         help='sgd optimizer momentum')
 
     parser.add_argument('--model', type=str, default='nn', metavar='N',
@@ -63,14 +63,14 @@ def add_args(parser):
     parser.add_argument('--client_num_per_round', type=int, default=2, metavar='NN',
                         help='number of workers')
 
-    parser.add_argument('--batch_size', type=int, default=60, metavar='N',
+    parser.add_argument('--batch_size', type=int, default=10, metavar='N',
                         help='input batch size for training (default: 64)')
 
     parser.add_argument('--client_optimizer', type=str, default='sgd',
                         help='SGD with momentum; adam')
 
-    parser.add_argument('--lr', type=float, default=0.03, metavar='LR',
-                        help='learning rate (default: 0.001)')
+    parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+                        help='learning rate (default: 0.01)')
 
     parser.add_argument('--wd', help='weight decay parameter;', type=float, default=0.001)
 

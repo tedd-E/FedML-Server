@@ -7,10 +7,14 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 20, 5, 1)
         self.conv2 = nn.Conv2d(20, 50, 5, 1)
-        self.fc1 = nn.Linear(50*4*4, 500)
+        self.fc1 = nn.Linear(50*4*4, 500)        #500
         self.fc2 = nn.Linear(500, output_dim)
 
     def forward(self, x):
+
+
+        x = torch.reshape(x,(len(x),1,28,28))
+
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(x, 2, 2)
         x = F.relu(self.conv2(x))

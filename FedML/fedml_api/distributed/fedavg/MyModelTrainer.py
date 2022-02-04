@@ -1,6 +1,7 @@
 import logging
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 try:
@@ -23,30 +24,66 @@ class MyModelTrainer(ModelTrainer):
         model.train()
 
         criterion = nn.CrossEntropyLoss().to(device)
-        if args.client_optimizer == "sgd":
-            optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-        else:
-            optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
-                                         lr=args.lr,
-                                         weight_decay=args.wd, amsgrad=True)
-        epoch_loss = []
-        for epoch in range(args.epochs):
-            batch_loss = []
-            for batch_idx, (x, labels) in enumerate(train_data):
-                # logging.info(images.shape)
-                x, labels = x.to(device), labels.to(device)
-                optimizer.zero_grad()
-                log_probs = model(x)
-                loss = criterion(log_probs, labels)
-                loss.backward()
-                optimizer.step()
-                batch_loss.append(loss.item())
-            if len(batch_loss) > 0:
-                epoch_loss.append(sum(batch_loss) / len(batch_loss))
-                logging.info('(Trainer_ID {}. Local Training Epoch: {} \tLoss: {:.6f}'.format(self.id,
-                                                                                              epoch,
-                                                                                              sum(epoch_loss) / len(
-                                                                                                  epoch_loss)))
+
+        if(args.model=='lr'):
+            if args.client_optimizer == "sgd":
+                optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+            else:
+                optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
+                                             lr=args.lr,
+                                             weight_decay=args.wd, amsgrad=True)
+            epoch_loss = []
+            for epoch in range(args.epochs):
+                batch_loss = []
+                for batch_idx, (x, labels) in enumerate(train_data):
+                    # logging.info(images.shape)
+                    x, labels = x.to(device), labels.to(device)
+                    optimizer.zero_grad()
+                    log_probs = model(x)
+                    loss = criterion(log_probs, labels)
+                    loss.backward()
+                    optimizer.step()
+                    batch_loss.append(loss.item())
+                if len(batch_loss) > 0:
+                    epoch_loss.append(sum(batch_loss) / len(batch_loss))
+                    logging.info('(Trainer_ID {}. Local Training Epoch: {} \tLoss: {:.6f}'.format(self.id,
+                                                                                                  epoch,
+                                                                                                  sum(epoch_loss) / len(
+                                                                                                      epoch_loss)))
+
+        elif(args.model=='nn'):
+            if args.client_optimizer == "sgd":
+                optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+            else:
+                optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
+                                             lr=args.lr,
+                                             weight_decay=args.wd, amsgrad=True)
+
+            epoch_loss = []
+            for epoch in range(args.epochs):
+                batch_loss = []
+                for batch_idx, (x, labels) in enumerate(train_data):
+                    # logging.info(images.shape)
+                    x, labels = x.to(device), labels.to(device)
+                    optimizer.zero_grad()
+                    
+
+
+                    output = model(x)
+                    loss = F.nll_loss(output,labels)
+                    
+
+
+                    loss.backward()
+                    optimizer.step()
+                    batch_loss.append(loss.item())
+                if len(batch_loss) > 0:
+                    epoch_loss.append(sum(batch_loss) / len(batch_loss))
+                    logging.info('(Trainer_ID {}. Local Training Epoch: {} \tLoss: {:.6f}'.format(self.id,
+                                                                                                  epoch,
+                                                                                                  sum(epoch_loss) / len(
+                                                                                                      epoch_loss)))
+		
 
     def test(self, test_data, device, args):
         model = self.model
@@ -86,3 +123,6 @@ class MyModelTrainer(ModelTrainer):
                 metrics['test_total'] += target.size(0)
 
         return metrics
+
+    def test_on_the_server(self, train_data_local_dict, test_data_local_dict, device, args=None) -> bool:
+        return False
