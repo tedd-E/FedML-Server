@@ -17,8 +17,15 @@ from FedML.fedml_api.distributed.fedavg.FedAvgServerManager import FedAVGServerM
 from FedML.fedml_api.distributed.fedavg.MyModelTrainer import MyModelTrainer
 
 from FedML.fedml_api.data_preprocessing.MNIST.data_loader import load_partition_data_mnist
+from FedML.fedml_api.data_preprocessing.cifar10.data_loader import load_partition_data_cifar10
+from FedML.fedml_api.data_preprocessing.cifar100.data_loader import load_partition_data_cifar100
+from FedML.fedml_api.data_preprocessing.cinic10.data_loader import load_partition_data_cinic10
+from FedML.fedml_api.data_preprocessing.shakespeare.data_loader import load_partition_data_shakespeare
 
-
+from FedML.fedml_api.model.cv.mobilenet import mobilenet
+from FedML.fedml_api.model.cv.resnet import resnet56
+from FedML.fedml_api.model.linear.lr import LogisticRegression
+from FedML.fedml_api.model.nlp.rnn import RNN_OriginalFedAvg
 from FedML.fedml_api.model.nn.NN import Net
 
 from FedML.fedml_core.distributed.communication.observer import Observer
@@ -140,6 +147,7 @@ def register_device():
 
     training_task_args = {"dataset": args.dataset,
                           "data_dir": args.data_dir,
+                          "momentum": args.momentum,
                           "partition_method": args.partition_method,
                           "partition_alpha": args.partition_alpha,
                           "model": args.model,
@@ -235,6 +243,7 @@ if __name__ == '__main__':
     # In this case, please use our FedML distributed version (./fedml_experiments/distributed_fedavg)
     model = create_model(args, model_name=args.model, output_dim=dataset[7])
     model_trainer = MyModelTrainer(model)
+
 
     aggregator = FedAVGAggregator(train_data_global, test_data_global, train_data_num,
                                   train_data_local_dict, test_data_local_dict, train_data_local_num_dict,

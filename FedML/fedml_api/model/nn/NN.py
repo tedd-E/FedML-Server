@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # import logging
 # import torch
 import torch.nn as nn
@@ -6,6 +7,11 @@ import torch.nn.functional as F
 # from torchvision import datasets, transforms
 # import numpy as np
 # import time
+=======
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+>>>>>>> fd0bc076505df9e75067b7488e04807b815c1eb0
 
 class Net(nn.Module):
     def __init__(self,output_dim):
