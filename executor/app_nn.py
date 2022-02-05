@@ -26,7 +26,7 @@ from FedML.fedml_api.model.cv.mobilenet import mobilenet
 from FedML.fedml_api.model.cv.resnet import resnet56
 from FedML.fedml_api.model.linear.lr import LogisticRegression
 from FedML.fedml_api.model.nlp.rnn import RNN_OriginalFedAvg
-from FedML.fedml_api.model.nn.NN import Net
+from FedML.fedml_api.model.nn.NN import CNN_MNIST, CNN_CIFAR10
 
 from FedML.fedml_core.distributed.communication.observer import Observer
 
@@ -39,46 +39,53 @@ def add_args(parser):
     return a parser added with args required by fit
     """
     # Training settings
-    parser.add_argument('--momentum', type=float, default='0.9', metavar='N',
-                        help='sgd optimizer momentum')
-
     parser.add_argument('--model', type=str, default='nn', metavar='N',
+                        choices=['lr', 'rnn', 'resnet56', 'mobilenet', 'nn'],
                         help='neural network used in training')
 
-    parser.add_argument('--dataset', type=str, default='mnist', metavar='N',
+    parser.add_argument('--dataset', type=str, default='cifar10', metavar='N',
+                        choices=['mnist', 'cifar10'],
                         help='dataset used for training')
 
-    parser.add_argument('--data_dir', type=str, default='"./../../../data/mnist"',
+    parser.add_argument('--data_dir', type=str, default='./../../../data/cifar10',
+                        choices=['./../../../data/mnist', './../../../data/cifar10'],
                         help='data directory')
 
-    parser.add_argument('--partition_method', type=str, default='hetero', metavar='N',
+    parser.add_argument('--partition_method', type=str, default='homo', metavar='N',
+                        choices=['homo', 'hetero', 'hetero-fix'],
                         help='how to partition the dataset on local workers')
 
     parser.add_argument('--partition_alpha', type=float, default=0.5, metavar='PA',
                         help='partition alpha (default: 0.5)')
 
-    parser.add_argument('--client_num_in_total', type=int, default=8, metavar='NN',
+    parser.add_argument('--client_num_in_total', type=int, default=8, metavar='C',
                         help='number of workers in a distributed cluster')
 
-    parser.add_argument('--client_num_per_round', type=int, default=2, metavar='NN',
+    parser.add_argument('--client_num_per_round', type=int, default=8, metavar='C',
                         help='number of workers')
 
-    parser.add_argument('--batch_size', type=int, default=60, metavar='N',
+    parser.add_argument('--data_size_per_client', type=int, default=600, metavar='B',
+                        help='input batch size for training (default: 64)')
+
+    parser.add_argument('--batch_size', type=int, default=100, metavar='B',
                         help='input batch size for training (default: 64)')
 
     parser.add_argument('--client_optimizer', type=str, default='sgd',
                         help='SGD with momentum; adam')
 
-    parser.add_argument('--lr', type=float, default=0.03, metavar='LR',
-                        help='learning rate (default: 0.001)')
+    parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+                        help='learning rate (default: 0.01)')
+
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='MO',
+                        help='sgd optimizer momentum')
 
     parser.add_argument('--wd', help='weight decay parameter;', type=float, default=0.001)
 
-    parser.add_argument('--epochs', type=int, default=10, metavar='EP',
+    parser.add_argument('--epochs', type=int, default=5, metavar='EP',
                         help='how many epochs will be trained locally')
 
-    parser.add_argument('--comm_round', type=int, default=5,
-                        help='how many round of communications we shoud use')
+    parser.add_argument('--comm_round', type=int, default=100,
+                        help='how many round of communications we should use')
 
     parser.add_argument('--is_mobile', type=int, default=1,
                         help='whether the program is running on the FedML-Mobile server side')
@@ -147,14 +154,17 @@ def register_device():
 
     training_task_args = {"dataset": args.dataset,
                           "data_dir": args.data_dir,
-                          "momentum": args.momentum,
                           "partition_method": args.partition_method,
                           "partition_alpha": args.partition_alpha,
                           "model": args.model,
                           "client_num_per_round": args.client_num_per_round,
+                          "client_num_in_total": args.client_num_in_total,
+                          "data_size_per_client": args.data_size_per_client,
                           "comm_round": args.comm_round,
                           "epochs": args.epochs,
+                          "client_optimizer": args.client_optimizer,
                           "lr": args.lr,
+                          "momentum": args.momentum,
                           "wd": args.wd,
                           "batch_size": args.batch_size,
                           "frequency_of_the_test": args.frequency_of_the_test,
@@ -186,18 +196,51 @@ def load_data(args, dataset_name):
         we uniformly sample a fraction of clients each round (as the original FedAvg paper)
         """
         args.client_num_in_total = client_num
+    elif dataset_name == "shakespeare":
+        logging.info("load_data. dataset_name = %s" % dataset_name)
+        client_num, train_data_num, test_data_num, train_data_global, test_data_global, \
+        train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
+        class_num = load_partition_data_shakespeare(args.batch_size)
+        args.client_num_in_total = client_num
+    else:
+        if dataset_name == "cifar10":
+            data_loader = load_partition_data_cifar10
+        elif dataset_name == "cifar100":
+            data_loader = load_partition_data_cifar100 # Not tested
+        elif dataset_name == "cinic10":
+            data_loader = load_partition_data_cinic10 # Not tested
+        else:
+            data_loader = load_partition_data_cifar10
+
+        print("============================Starting loading cifar10==========================#")
+        train_data_num, test_data_num, train_data_global, test_data_global, \
+        train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
+        class_num = data_loader(args.dataset, args.data_dir, args.partition_method,
+                                args.partition_alpha, args.client_num_in_total, args.batch_size,
+                                args.data_size_per_client)
+        print("=================================cifar10 loaded===============================#")
 
     dataset = [train_data_num, test_data_num, train_data_global, test_data_global,
                train_data_local_num_dict, train_data_local_dict, test_data_local_dict, class_num]
     return dataset
 
-
 def create_model(args, model_name, output_dim):
     logging.info("create_model. model_name = %s, output_dim = %s" % (model_name, output_dim))
     model = None
-    if model_name == "nn" and args.dataset == "mnist":
-        model = Net(output_dim)
+    if model_name == "lr" and args.dataset == "cifar10":
+        model = LogisticRegression(32 * 32 * 3, output_dim)    #Dim?
         args.client_optimizer = "sgd"
+    elif model_name == "rnn" and args.dataset == "shakespeare":
+        model = RNN_OriginalFedAvg(28 * 28, output_dim)
+        args.client_optimizer = "sgd"
+    elif model_name == "resnet56":
+        model = resnet56(class_num=output_dim)
+    elif model_name == "mobilenet":
+        model = mobilenet(class_num=output_dim)
+    elif model_name == "nn" and args.dataset == "mnist":
+        model = CNN_MNIST()
+    elif model_name == "nn" and args.dataset == "cifar10":
+        model = CNN_CIFAR10()
     return model
 
 
@@ -216,7 +259,7 @@ if __name__ == '__main__':
     
     wandb.init(
         # project="federated_nas",
-        project="fedml_mnist_nn",
+        project="fedml_nn",
         name="mobile(mqtt)" + str(args.partition_method) + "r" + str(args.comm_round) + "-e" + str(
             args.epochs) + "-lr" + str(
             args.lr),
@@ -241,7 +284,7 @@ if __name__ == '__main__':
     # create model.
     # Note if the model is DNN (e.g., ResNet), the training will be very slow.
     # In this case, please use our FedML distributed version (./fedml_experiments/distributed_fedavg)
-    model = create_model(args, model_name=args.model, output_dim=dataset[7])
+    model = create_model(args, model_name=args.model, output_dim=class_num)
     model_trainer = MyModelTrainer(model)
 
 

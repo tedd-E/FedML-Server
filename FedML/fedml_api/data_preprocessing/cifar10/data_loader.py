@@ -1,11 +1,14 @@
 import logging
 
 import numpy as np
+import random
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
 
 from .datasets import CIFAR10_truncated
+from .load_data import Loader, BiasLoader, ShardLoader
+from .dists import *
 
 logging.basicConfig()
 logger = logging.getLogger()
@@ -111,40 +114,91 @@ def load_cifar10_data(datadir):
 
 
 # TODO: here
-def partition_data(dataset, datadir, partition, n_nets, alpha):
+def partition_data(dataset, datadir, partition, n_clients, alpha, data_size_per_client):
     logging.info("*********partition data***************")
     X_train, y_train, X_test, y_test = load_cifar10_data(datadir)
-    n_train = X_train.shape[0]
+    # n_train = X_train.shape[0]
     # n_test = X_test.shape[0]
 
     if partition == "homo":
-        total_num = n_train
-        idxs = np.random.permutation(total_num)
-        batch_idxs = np.array_split(idxs, n_nets)
-        net_dataidx_map = {i: batch_idxs[i] for i in range(n_nets)}
+        loader = Loader(X_train, y_train, X_test, y_test)
+        net_dataidx_map = {}
 
-    elif partition == "hetero":
+        for j in range(n_clients):
+            data_idx = loader.get_partition(data_size_per_client)
+            np.random.shuffle(data_idx)
+            net_dataidx_map[j] = data_idx
+        # idxs = np.random.permutation(total_num)
+        # batch_idxs = np.array_split(idxs, n_nets)
+        # net_dataidx_map = {i: batch_idxs[i] for i in range(n_nets)}
+
+    elif partition == "hetero": # Not tested
         min_size = 0
         K = 10
         N = y_train.shape[0]
         logging.info("N = " + str(N))
         net_dataidx_map = {}
 
+        # Create distribution for label preferences if non-IID
+        #dist = {
+        #    "uniform": dists.uniform(num_clients, len(labels)),
+        #    "normal": dists.normal(num_clients, len(labels))
+        #}[self.config.clients.label_distribution]
+        #random.shuffle(dist)  # Shuffle distribution
+
+        # Make simulated clients
+        #clients = []
+        #for client_id in range(num_clients):
+            # Create new client
+            #new_client = client.Client(client_id)
+
+            #if not IID:  # Configure clients for non-IID data
+            #    if self.config.data.bias:
+                    # Bias data partitions
+            #        bias = self.config.data.bias
+                    # Choose weighted random preference
+            #        pref = random.choices(labels, dist)[0]
+
+                    # Assign preference, bias config
+            #        new_client.set_bias(pref, bias)
+            #    elif self.config.data.shard:
+            #        # Shard data partitions
+            #        shard = self.config.data.shard
+
+            #        # Assign shard config
+            #        new_client.set_shard(shard)
+
+            #clients.append(new_client)
+
+        #logging.info('Total clients: {}'.format(len(clients)))
+
+        #if loader == 'bias':
+        #    logging.info('Label distribution: {}'.format(
+        #        [[client.pref for client in clients].count(label) for label in
+        #         labels]))
+
+        #if loading == 'static':
+        #    if loader == 'shard':  # Create data shards
+        #        self.loader.create_shards()
+
+            # Send data partition to all clients
+        #    [self.set_client_data(client) for client in clients]
+
         while min_size < 10:
-            idx_batch = [[] for _ in range(n_nets)]
+            idx_batch = [[] for _ in range(n_clients)]
             # for each class in the dataset
             for k in range(K):
                 idx_k = np.where(y_train == k)[0]
                 np.random.shuffle(idx_k)
-                proportions = np.random.dirichlet(np.repeat(alpha, n_nets))
+                proportions = np.random.dirichlet(np.repeat(alpha, n_clients))
                 ## Balance
-                proportions = np.array([p * (len(idx_j) < N / n_nets) for p, idx_j in zip(proportions, idx_batch)])
+                proportions = np.array([p * (len(idx_j) < N / n_clients) for p, idx_j in zip(proportions, idx_batch)])
                 proportions = proportions / proportions.sum()
                 proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
                 idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
                 min_size = min([len(idx_j) for idx_j in idx_batch])
 
-        for j in range(n_nets):
+        for j in range(n_clients):
             np.random.shuffle(idx_batch[j])
             net_dataidx_map[j] = idx_batch[j]
 
@@ -233,12 +287,13 @@ def load_partition_data_distributed_cifar10(process_id, dataset, data_dir, parti
     return train_data_num, train_data_global, test_data_global, local_data_num, train_data_local, test_data_local, class_num
 
 
-def load_partition_data_cifar10(dataset, data_dir, partition_method, partition_alpha, client_number, batch_size):
+def load_partition_data_cifar10(dataset, data_dir, partition_method, partition_alpha, client_number, batch_size, data_size_per_client):
     X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts = partition_data(dataset,
                                                                                              data_dir,
                                                                                              partition_method,
                                                                                              client_number,
-                                                                                             partition_alpha)
+                                                                                             partition_alpha,
+                                                                                             data_size_per_client)
     class_num = len(np.unique(y_train))
     logging.info("traindata_cls_counts = " + str(traindata_cls_counts))
     train_data_num = sum([len(net_dataidx_map[r]) for r in range(client_number)])

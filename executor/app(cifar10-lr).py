@@ -16,7 +16,11 @@ from FedML.fedml_api.distributed.fedavg.MyModelTrainer import MyModelTrainer
 
 from FedML.fedml_api.data_preprocessing.cifar10.data_loader import load_partition_data_cifar10
 
+from FedML.fedml_api.model.cv.mobilenet import mobilenet
+from FedML.fedml_api.model.cv.resnet import resnet56
 from FedML.fedml_api.model.linear.lr import LogisticRegression
+from FedML.fedml_api.model.nlp.rnn import RNN_OriginalFedAvg
+from FedML.fedml_api.model.nn.NN import Net_MNIST, Net_CIFAR10
 
 from FedML.fedml_core.distributed.communication.observer import Observer
 
