@@ -16,8 +16,9 @@ except ImportError:
 
 
 class FedAVGServerManager(ServerManager):
-    def __init__(self, args, aggregator, comm=None, rank=0, size=0, backend="MPI", is_preprocessed=False):
-        super().__init__(args, comm, rank, size, backend)
+    def __init__(self, args, aggregator, comm=None, rank=0, size=0, backend="MPI",
+                 mqtt_host="127.0.0.1", mqtt_port=1883, is_preprocessed=False):
+        super().__init__(args, comm, rank, size, backend, mqtt_host, mqtt_port)
         self.args = args
         self.aggregator = aggregator
         self.round_num = args.comm_round

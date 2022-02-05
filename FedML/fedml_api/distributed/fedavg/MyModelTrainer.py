@@ -24,7 +24,10 @@ class MyModelTrainer(ModelTrainer):
 
         criterion = nn.CrossEntropyLoss().to(device)
         if args.client_optimizer == "sgd":
-            optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+            if hasattr(args, 'momentum'):
+                optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+            else:
+                optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
         else:
             optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
                                          lr=args.lr,
@@ -86,3 +89,6 @@ class MyModelTrainer(ModelTrainer):
                 metrics['test_total'] += target.size(0)
 
         return metrics
+
+    def test_on_the_server(self, train_data_local_dict, test_data_local_dict, device, args=None) -> bool:
+        return False

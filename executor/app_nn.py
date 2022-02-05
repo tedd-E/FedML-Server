@@ -107,6 +107,15 @@ def add_args(parser):
     parser.add_argument('--grpc_ipconfig_path', type=str, default="../executor/grpc_ipconfig.csv",
                         help='config table containing ipv4 address of grpc server')
 
+    # Communication settings
+    parser.add_argument('--backend', type=str, default='mqtt', metavar='N',
+                        choices=['mqtt', 'MPI'],
+                        help='communication backend')
+    parser.add_argument('--mqtt_host', type=str, default='127.0.0.1', metavar='IP',
+                        help='host IP in MQTT')
+    parser.add_argument('--mqtt_port', type=int, default=1883, metavar='N',
+                        help='host port in MQTT')
+
     args = parser.parse_args()
     return args
 
@@ -174,7 +183,10 @@ def register_device():
                               client_id-1
                           ),
                           'is_preprocessed': args.is_preprocessed,
-                          'grpc_ipconfig_path': args.grpc_ipconfig_path}
+                          'grpc_ipconfig_path': args.grpc_ipconfig_path,
+                          'backend': args.backend,
+                          'mqtt_host': args.mqtt_host,
+                          'mqtt_port': args.mqtt_port}
 
     return jsonify({"errno": 0,
                     "executorId": "executorId",
@@ -297,6 +309,8 @@ if __name__ == '__main__':
                                          rank=0,
                                          size=size,
                                          backend="MQTT",
+                                         mqtt_host=args.mqtt_host,
+                                         mqtt_port=args.mqtt_port,
                                          is_preprocessed=args.is_preprocessed)
     server_manager.run()
 
